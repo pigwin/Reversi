@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using System.Net.Sockets;
 
 public class Manager : MonoBehaviour
 {
@@ -29,6 +30,7 @@ public class Manager : MonoBehaviour
     public static GAMETYPE gameMenu = GAMETYPE.TITLE;
     public static PLAYTYPE[] player = { PLAYTYPE.Empty, PLAYTYPE.Empty };
     public static Sprite[] koma;
+    public static Socket[] handler;
     private void Start()
     {
         SceneManager.LoadScene("Title");
