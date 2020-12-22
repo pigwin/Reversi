@@ -4,11 +4,13 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using System.Net.Sockets;
+using System.Text;
 
 public class Main : MonoBehaviour
 {
     [SerializeField]public Text turn_text;
     [SerializeField]public GameObject Original_field;
+    SpriteRenderer pointer;
     SpriteRenderer[][] field = new SpriteRenderer[8][];
     Manager.STATUS[][] field_status = new Manager.STATUS[8][];
     int turn = 0;
@@ -197,6 +199,25 @@ public class Main : MonoBehaviour
             }
         }
     }
+    public void AIControl()
+    {
+        Manager.handler[turn].Send(Encoding.UTF8.GetBytes("your turn"));
+        byte[] bytes = new byte[1024];
+        int bytesRec = Manager.handler[turn].Receive(bytes);
+        string data = Encoding.UTF8.GetString(bytes, 0, bytesRec);
+
+        Debug.Log(data);
+        string[] pointStr = data.Split(',');
+        point = (int.Parse(pointStr[0]), int.Parse(pointStr[1]));
+        if (CanPut(turn, point))
+        {
+            field[point.x][point.y].sprite = Manager.koma[turn];
+            field_status[point.x][point.y] = IntToStatus(turn);
+            Flip(turn, point);
+            turn = (turn + 1) % 2;
+        }
+
+    }
     void DrawField()
     {
         for (int i = 0; i < 8; i++)
@@ -206,7 +227,7 @@ public class Main : MonoBehaviour
                 field[i][j].color = new Color(1, 1, 1);
                 if ((i, j) == point)
                 {
-                    field[i][j].color = new Color(0, 0, 0);
+                    pointer.transform.position = field[i][j].transform.position;
                 }
                 field[i][j].sprite = Manager.koma[(int)field_status[i][j]];
             }
@@ -232,6 +253,9 @@ public class Main : MonoBehaviour
             case Manager.PLAYTYPE.UsingHand:
                 LocalControl();
                 break;
+            case Manager.PLAYTYPE.UsingAI:
+                AIControl();
+                break;
         }
         DrawField();
         if ((Manager.result = Winner()) != Manager.STATUS.Empty)
@@ -247,6 +271,11 @@ public class Main : MonoBehaviour
         point = (0, 0);
         field = new SpriteRenderer[8][];
         field_status = new Manager.STATUS[8][];
+        pointer = new SpriteRenderer();
+        pointer = Instantiate(Original_field.GetComponent<SpriteRenderer>(), new Vector2(-4.8f,7*1.2f -4f), new Quaternion());
+        pointer.sprite = Manager.koma[2];
+        pointer.color = new Color(0.0f, 0.0f, 0.0f, 0.5f);
+        pointer.sortingOrder = 2;
         turn = 0;
         for (int i = 0; i < 8; i++)
         {

@@ -10,6 +10,7 @@ public class Title : MonoBehaviour
 {
     [SerializeField] List<TMP_Text> player_text;
     int AInum = 0;
+    private static Socket listener;
     public void Player1Button()
     {
         Manager.player[0] = Manager.PLAYTYPE.UsingHand;
@@ -40,7 +41,7 @@ public class Title : MonoBehaviour
         IPAddress ipAddress = ipHostInfo.AddressList[3];
         IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11000);
         Debug.Log(ipAddress);
-        Socket listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+        listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
         listener.Bind(localEndPoint);
         listener.Listen(2);
         Manager.handler = new Socket[2];
@@ -80,14 +81,6 @@ public class Title : MonoBehaviour
         HowPlay(1);
         if(Manager.player[0] != Manager.PLAYTYPE.Empty && Manager.player[1] != Manager.PLAYTYPE.Empty)
         {
-            if(Manager.handler[0] == null)
-            {
-                Manager.handler[0].Close();
-            }
-            if(Manager.handler[1] == null)
-            {
-                Manager.handler[1].Close();
-            }
             SceneManager.LoadScene("Main");
         }
     }
