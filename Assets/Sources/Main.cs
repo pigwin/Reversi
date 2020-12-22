@@ -16,11 +16,7 @@ public class Main : MonoBehaviour
     int turn = 0;
     (int x,int y) point = (0, 0);
     // Start is called before the first frame update
-    void Start()
-    {
-        Manager.koma = Resources.LoadAll<Sprite>("koma");
-        Initial();
-    }
+
     (int x,int y) TupleAdd((int x,int y)a,(int x,int y) b)
     {
         return (a.x + b.x, a.y + b.y);
@@ -196,6 +192,11 @@ public class Main : MonoBehaviour
                 field_status[point.x][point.y] = IntToStatus(turn);
                 Flip(turn, point);
                 turn = (turn + 1) % 2;
+                if (Manager.handler[turn] != null)
+                {
+                    Manager.handler[turn].Send(Encoding.UTF8.GetBytes("put"));
+                    Manager.handler[turn].Send(Encoding.UTF8.GetBytes($"{point.x},{point.y}"));
+                }
             }
         }
     }
@@ -215,6 +216,15 @@ public class Main : MonoBehaviour
             field_status[point.x][point.y] = IntToStatus(turn);
             Flip(turn, point);
             turn = (turn + 1) % 2;
+            if (Manager.handler[turn] != null)
+            {
+                Manager.handler[turn].Send(Encoding.UTF8.GetBytes("put"));
+                Manager.handler[turn].Send(Encoding.UTF8.GetBytes($"{point.x},{point.y}"));
+            }
+        }
+        else
+        {
+            Manager.handler[turn].Send(Encoding.UTF8.GetBytes("cant"));
         }
 
     }
@@ -232,13 +242,6 @@ public class Main : MonoBehaviour
                 field[i][j].sprite = Manager.koma[(int)field_status[i][j]];
             }
         }
-    }
-    void GameMain()
-    {
-        if (!HavePutspace(turn))
-        {
-            turn = (turn + 1) % 2;
-        }
         if (IntToStatus(turn) == Manager.STATUS.Black)
         {
             turn_text.text = "BLACK";
@@ -247,7 +250,19 @@ public class Main : MonoBehaviour
         {
             turn_text.text = "WHITE";
         }
-
+    }
+    private void Awake()
+    {
+        Manager.koma = Resources.LoadAll<Sprite>("koma");
+        Initial();
+        DrawField();
+    }
+    void GameMain()
+    {
+        if (!HavePutspace(turn))
+        {
+            turn = (turn + 1) % 2;
+        }
         switch (Manager.player[turn])
         {
             case Manager.PLAYTYPE.UsingHand:
@@ -293,9 +308,17 @@ public class Main : MonoBehaviour
         field_status[3][3] = Manager.STATUS.White;
         field_status[4][4] = Manager.STATUS.White;
     }
+    int waitNum = 0;
     // Update is called once per frame
-    void LateUpdate()
+    void Update()
     {
-        GameMain();
+        if(waitNum == 0)
+        {
+            waitNum = 1;
+        }
+        else
+        {
+            GameMain();
+        }
     }
 }

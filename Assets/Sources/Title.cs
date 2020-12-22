@@ -10,7 +10,6 @@ public class Title : MonoBehaviour
 {
     [SerializeField] List<TMP_Text> player_text;
     int AInum = 0;
-    private static Socket listener;
     public void Player1Button()
     {
         Manager.player[0] = Manager.PLAYTYPE.UsingHand;
@@ -34,26 +33,41 @@ public class Title : MonoBehaviour
                 break;
         }
     }
-    public async static void SocketServer()
+    private static void EndAccept(object sender, SocketAsyncEventArgs e)
     {
-        byte[] bytes = new byte[1024];
-        IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
-        IPAddress ipAddress = ipHostInfo.AddressList[3];
-        IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11000);
-        Debug.Log(ipAddress);
-        listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-        listener.Bind(localEndPoint);
-        listener.Listen(2);
-        Manager.handler = new Socket[2];
-        Manager.handler[0] = await listener.AcceptAsync();
-        Manager.handler[1] = await listener.AcceptAsync();
+        for (int i = 0; i < 2; i++)
+        {
+            if (Manager.handler[i] == null)
+            {
+                if (e.SocketError == SocketError.OperationAborted)
+                {
+                    e.Dispose();
+                    break;
+                }
+                Manager.handler[i] = e.AcceptSocket;
+                break;
+            }
+        }
     }
-    private void Start()
+    async static void AcceptSocket()
     {
-        SocketServer();
+        if (Manager.handler[0] != null)
+        {
+            Manager.handler[0].Close();
+            Manager.handler[0] = await Manager.listener.AcceptAsync();
+        }
+        if (Manager.handler[1] != null)
+        {
+            Manager.handler[1].Close();
+            Manager.handler[1] = await Manager.listener.AcceptAsync();
+        }
+    }
+    private void Awake()
+    {
+        AcceptSocket();
     }
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
         //どちらも手動であればplayer1->黒 player2->白
         //少なくとも一方がAIであればランダムに順番が選ばれる。
