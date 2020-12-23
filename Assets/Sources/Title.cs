@@ -33,32 +33,37 @@ public class Title : MonoBehaviour
                 break;
         }
     }
-    private static void EndAccept(object sender, SocketAsyncEventArgs e)
+    public async static void SocketServer()
     {
-        for (int i = 0; i < 2; i++)
+        if(Manager.listener != null)
         {
-            if (Manager.handler[i] == null)
-            {
-                if (e.SocketError == SocketError.OperationAborted)
-                {
-                    e.Dispose();
-                    break;
-                }
-                Manager.handler[i] = e.AcceptSocket;
-                break;
-            }
+            Manager.listener.Close();
         }
+        byte[] bytes = new byte[1024];
+        IPHostEntry ipHostInfo = Dns.GetHostEntry(Dns.GetHostName());
+        IPAddress ipAddress = ipHostInfo.AddressList[3];
+        IPEndPoint localEndPoint = new IPEndPoint(ipAddress, 11000);
+        Debug.Log(ipAddress);
+        Manager.listener = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+        Manager.listener.Bind(localEndPoint);
+        Manager.listener.Listen(2);
+        Manager.handler = new Socket[2];
+        Manager.handler[0] = await Manager.listener.AcceptAsync();
+        Manager.handler[1] = await Manager.listener.AcceptAsync();
     }
     async static void AcceptSocket()
     {
+        SocketServer();
         if (Manager.handler[0] != null)
         {
             Manager.handler[0].Close();
+            Manager.handler[0] = null;
             Manager.handler[0] = await Manager.listener.AcceptAsync();
         }
         if (Manager.handler[1] != null)
         {
             Manager.handler[1].Close();
+            Manager.handler[1] = null;
             Manager.handler[1] = await Manager.listener.AcceptAsync();
         }
     }
@@ -81,6 +86,7 @@ public class Title : MonoBehaviour
             else
             {
                 Manager.player[1] = Manager.PLAYTYPE.UsingAI;
+                (Manager.handler[0],Manager.handler[1]) = (Manager.handler[1],Manager.handler[0]);
             }
         }
         if(Manager.handler[1] != null && AInum==1)
