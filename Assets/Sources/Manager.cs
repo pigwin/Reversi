@@ -35,6 +35,6 @@ public class Manager : MonoBehaviour
     public static Socket listener;
     private void Start()
     {
-        SceneManager.LoadScene("Title");
+        SceneManager.LoadSceneAsync("Title");
     }
 }
